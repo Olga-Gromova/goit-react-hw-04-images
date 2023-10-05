@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-export const Button = styled.button`
+export const StyledButtonMore = styled.button`
   padding: 8px 16px;
   margin-left: auto;
   margin-right: auto;
@@ -19,7 +19,10 @@ export const Button = styled.button`
     0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
 
   &:hover,
-  &:focus {
-    background-color: #303f9f;
+  &:focus,
+  &:active {
+    background-color: #90f542;
+    box-shadow: #90f542 0px 5px 15px;
+    border: 2px solid #90f542;
   }
 `;

@@ -1,40 +1,36 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { Button, Input, SearchForm, Searchbar } from './Searchbar.styled';
 import { FaSistrix } from 'react-icons/fa';
 
-export default class SearchBar extends Component {
-  state = {
-    imageName: '',
+export default function SearchBar({ onSubmit }) {
+  const [value, setValue] = useState('');
+
+  const onChangeInput = e => {
+    setValue(e.currentTarget.value);
   };
 
-  onChangeInput = e => {
-    this.setState({ imageName: e.currentTarget.value });
-  };
-
-  handleSubmitForm = e => {
+  const handleSubmitForm = e => {
     e.preventDefault();
-    this.props.onSubmit(this.state.imageName);
+    onSubmit(value);
 
-    this.setState({ imageName: '' });
+    setValue('');
   };
 
-  render() {
-    return (
-      <Searchbar>
-        <SearchForm onSubmit={this.handleSubmitForm}>
-          <Button type="submit" aria-label="Search Images">
-            <FaSistrix size="20px" />
-          </Button>
+  return (
+    <Searchbar>
+      <SearchForm onSubmit={handleSubmitForm}>
+        <Button type="submit" aria-label="Search Images">
+          <FaSistrix size="20px" />
+        </Button>
 
-          <Input
-            type="text"
-            placeholder="Please, enter name of images for searching"
-            value={this.state.imageName}
-            onChange={this.onChangeInput}
-            name="imageName"
-          />
-        </SearchForm>
-      </Searchbar>
-    );
-  }
+        <Input
+          type="text"
+          placeholder="Please, enter name of images for searching"
+          value={value}
+          onChange={onChangeInput}
+          name="imageName"
+        />
+      </SearchForm>
+    </Searchbar>
+  );
 }

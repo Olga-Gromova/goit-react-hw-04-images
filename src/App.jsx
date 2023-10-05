@@ -1,23 +1,25 @@
 import { AppStyle } from 'App.styled';
 import ImageGallery from 'components/ImageGallery/ImageGallery';
 import SearchBar from 'components/Searchbar/Searchbar';
-import { Component } from 'react';
+import { useState } from 'react';
 
-export default class App extends Component {
-  state = {
-    imageName: '',
+export default function App() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const getValuesForm = value => {
+    setSearchQuery(value);
+    setCurrentPage(1);
   };
 
-  getValuesForm = val => {
-    this.setState({ imageName: val });
-  };
-
-  render() {
-    return (
-      <AppStyle>
-        <SearchBar onSubmit={this.getValuesForm} />
-        <ImageGallery imageName={this.state.imageName} />
-      </AppStyle>
-    );
-  }
+  return (
+    <AppStyle>
+      <SearchBar onSubmit={getValuesForm} />
+      <ImageGallery
+        searchQuery={searchQuery}
+        page={currentPage}
+        setCurrentPage={setCurrentPage}
+      />
+    </AppStyle>
+  );
 }

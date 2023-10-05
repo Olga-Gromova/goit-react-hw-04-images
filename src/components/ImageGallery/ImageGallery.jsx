@@ -1,12 +1,13 @@
-import { Component } from 'react';
-import { fetchPixabayImg } from 'services/api';
+import { useState, useEffect } from 'react';
+import { getImg } from 'services/api';
 import { scrollToBottom } from 'utilits/scroll';
-import { GalleryList, TitleResults } from './ImageGallery.styled';
+import { GalleryList, StyledText, TitleResults } from './ImageGallery.styled';
 import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
 import LoadMore from 'components/LoadMore/LoadMore';
 import Modal from 'components/Modal/Modal';
 import { Loader } from 'components/Loader/Loader';
-
+import ScrollToTop from 'react-scroll-to-top';
+import { FaSistrix } from 'react-icons/fa';
 
 const STATUS = {
   IDLE: 'idle',
@@ -15,105 +16,90 @@ const STATUS = {
   REJECTED: 'rejected',
 };
 const { IDLE, PENDING, RESOLVED, REJECTED } = STATUS;
-export default class ImageGallery extends Component {
-  state = {
-    images: [],
-    page: 1,
-    status: IDLE,
-    showModal: false,
-    photo: '',
-    totalImages: 0,
-    loadMore: false,
-    error: '',
-  };
 
-  componentDidUpdate(prevProps, prevState) {
-    const { imageName } = this.props;
-    const { page } = this.state;
-    const prevName = prevProps.imageName;
-    const prevPage = prevState.page;
+export default function ImageGallery({ searchQuery, page, setCurrentPage }) {
+  const [status, setStatus] = useState(IDLE);
+  const [images, setImages] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [photo, setPhoto] = useState('');
+  const [error, setError] = useState(null);
+  const [loadMore, setLoadMore] = useState(false);
 
-    if (prevName !== imageName) {
-      this.setState({ images: [] });
-      this.fetchPixabayImg(imageName);
-    }
+  useEffect(() => {
+    if (!searchQuery) return;
 
-    if (prevPage !== page && this.state.status === RESOLVED) {
-      this.fetchPixabayImg(imageName, page);
-    }
-  }
+    const fetchPixabayImg = async (name, newPage = 1) => {
+      setStatus(PENDING);
 
-  fetchPixabayImg = async (name, page) => {
-    this.setState({ status: PENDING });
-    if (!name) return;
-    try {
-      const { hits, totalHits } = await fetchPixabayImg(name, page);
+      if (!name) return;
+      try {
+        const { hits, totalHits } = await getImg(name, newPage);
+        if (page === 1) {
+          setImages(hits);
+        } else {
+          setImages(prevState => [...prevState, ...hits]);
+        }
+        setLoadMore(page < Math.ceil(totalHits / 12));
+        setStatus(RESOLVED);
 
-      this.setState(prevState => ({
-        images: [...prevState.images, ...hits],
-        loadMore: this.state.page < Math.ceil(totalHits / 12),
-        status: RESOLVED,
-        totalImages: prevState.totalImages + hits.length,
-      }));
-      
-      if (totalHits === 0) {
-        return await Promise.reject(
-          new Error('There are some problems, try again later')
-        );
+        if (totalHits === 0) {
+          return await Promise.reject(
+            new Error('There are some problems, try again with other name')
+          );
+        }
+      } catch (err) {
+        setStatus(REJECTED);
+        setError(err.message);
+        console.log(err.message);
       }
-    } catch (err) {
-      this.setState({ status: REJECTED, error: err.message });
-      console.log(err.message);
-    }
-  };
+    };
+    fetchPixabayImg(searchQuery, page);
+  }, [page, searchQuery]);
 
-  onClickBtn = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const onClickBtn = () => {
+    setCurrentPage(page + 1);
     scrollToBottom();
   };
 
-  openModal = photo => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-      photo,
-    }));
+  const toggleModal = photo => {
+    setShowModal(!showModal);
+    setPhoto(photo);
   };
 
-  closeModal = () => {
-    this.setState({ showModal: false });
-  };
+  if (status === IDLE) {
+    return (
+      <TitleResults>
+        Hello, if you put some word above & click <FaSistrix /> you will see
+        images by this subject
+      </TitleResults>
+    );
+  }
 
-  render() {
-    const { status, error, showModal, photo, loadMore } = this.state;
-    if (status === IDLE) {
-      return;
-    }
+  if (status === RESOLVED) {
+    return (
+      <>
+        <TitleResults>
+          These images were found based on your search request: "{searchQuery}"
+        </TitleResults>
+        <GalleryList>
+          <ImageGalleryItem data={images} openModal={toggleModal} />
+        </GalleryList>
+        {loadMore && <LoadMore onClick={onClickBtn} />}
+        {!loadMore && (
+          <StyledText>
+            👀 Sorry, the set of images by request "{searchQuery}" has ended
+          </StyledText>
+        )}
+        {showModal && <Modal photo={photo} closeModal={toggleModal} />}
+        <ScrollToTop smooth />
+      </>
+    );
+  }
+  if (status === PENDING) {
+    return <Loader />;
+  }
 
-    if (status === RESOLVED) {
-      return (
-        <>
-          <TitleResults>
-            These images were found based on your search request: "
-            {this.props.imageName}"
-          </TitleResults>
-          <GalleryList>
-            <ImageGalleryItem
-              data={this.state.images}
-              openModal={this.openModal}
-            />
-          </GalleryList>
-          {loadMore && <LoadMore onClick={this.onClickBtn} />}
-          {!loadMore && <p>The selection of selected images has ended</p>}
-          {showModal && <Modal photo={photo} closeModal={this.closeModal} />}
-        </>
-      );
-    }
-    if (status === PENDING) {
-      return <Loader />;
-    }
-
-    if (status === REJECTED) {
-      return <h2>{error}</h2>;
-    }
+  if (status === REJECTED) {
+    return <h2>{error}</h2>;
   }
 }

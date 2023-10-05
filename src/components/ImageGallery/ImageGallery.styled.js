@@ -16,4 +16,13 @@ export const GalleryList = styled.ul`
 export const TitleResults = styled.h2`
   color: grey;
   margin: 0 15px;
+  text-align: center;
+`;
+
+export const StyledText = styled.p`
+  color: red;
+  margin: 0 15px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
 `;
